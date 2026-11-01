@@ -104,6 +104,26 @@ app.put("/api/tickets/:id", async (req, res) => {
   }
 });
 
+// Endpoint untuk Menghapus Laporan (False Alarm / Invalid)
+app.delete("/api/tickets/:id", async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    const result = await pool.query(
+      "DELETE FROM tickets WHERE id = $1 RETURNING *",
+      [id]
+    );
+    
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Tiket tidak ditemukan di database." });
+    }
+    
+    res.json({ message: "Tiket berhasil dihapus permanen.", deleted: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ==========================================
 // AUTH & MFA ROUTES
 // ==========================================
