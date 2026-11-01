@@ -1251,6 +1251,32 @@
         }
       };
 
+      window.deleteTicket = async (docId, displayId) => {
+        // Konfirmasi ganda untuk mencegah admin tidak sengaja mengklik hapus
+        const isConfirmed = confirm(
+          `Peringatan: Anda akan menghapus tiket #TKT-${displayId} secara permanen.\n\nLanjutkan penghapusan (False Alarm)?`,
+        );
+
+        if (!isConfirmed) return;
+
+        try {
+          const res = await fetch(`${API_BASE_URL}/tickets/${docId}`, {
+            method: "DELETE",
+          });
+
+          if (!res.ok) throw new Error("Gagal menghapus tiket dari server.");
+
+          window.showToast(
+            `Laporan #TKT-${displayId} berhasil dihapus dari sistem.`,
+            "pink",
+          );
+          loadTickets(); // Refresh tabel seketika
+        } catch (error) {
+          console.error("Hapus error:", error);
+          alert(error.message);
+        }
+      };
+
       window.submitNewTicket = async (e) => {
         e.preventDefault();
         const bodyData = {
@@ -1414,18 +1440,24 @@
           let actionHTML = "";
           const displayId = ticket.id.substring(0, 5).toUpperCase();
 
+        if (ticket.status === "Menunggu") {
+            statusHTML = `<span class="flex items-center gap-2 text-slate-400 text-xs font-medium"><div class="w-2 h-2 rounded-full bg-slate-400"></div> Menunggu</span>`;
+            actionHTML = `<button onclick="window.openInvestigasiModal('${ticket.id}', '${displayId}', '${ticket.kategori}', '${ticket.deskripsi.replace(/'/g, "\\'")}', '${dateStr}')" class="bg-synth-medium/40 hover:bg-synth-cyan hover:text-synth-darkest text-synth-cyan border border-synth-cyan px-3 py-1.5 rounded transition text-xs font-bold uppercase tracking-wider">Investigasi</button>` + deleteBtn;
+          }
           if (ticket.status === "Menunggu") {
             statusHTML = `<span class="flex items-center gap-2 text-slate-400 text-xs font-medium"><div class="w-2 h-2 rounded-full bg-slate-400"></div> Menunggu</span>`;
-            actionHTML = `<button onclick="window.openInvestigasiModal('${ticket.id}', '${displayId}', '${ticket.kategori}', '${ticket.deskripsi.replace(/'/g, "\\'")}', '${dateStr}')" class="bg-synth-medium/40 hover:bg-synth-cyan hover:text-synth-darkest text-synth-cyan border border-synth-cyan px-3 py-1.5 rounded transition text-xs font-bold uppercase tracking-wider">Investigasi</button>`;
-          } else if (ticket.status === "Investigasi") {
+            actionHTML = `<button onclick="window.openInvestigasiModal('${ticket.id}', '${displayId}', '${ticket.kategori}', '${ticket.deskripsi.replace(/'/g, "\\'")}', '${dateStr}')" class="bg-synth-medium/40 hover:bg-synth-cyan hover:text-synth-darkest text-synth-cyan border border-synth-cyan px-3 py-1.5 rounded transition text-xs font-bold uppercase tracking-wider">Investigasi</button>` + deleteBtn;
+          }
+          else if (ticket.status === "Investigasi") {
             statusHTML = `<span class="flex items-center gap-2 text-synth-pink text-xs font-bold"><i class="fas fa-cog fa-spin"></i> Investigasi</span>`;
             actionHTML = `
                       <button onclick="window.openLogModal('${ticket.id}')" class="bg-synth-darkest hover:bg-synth-pink hover:text-white text-synth-pink border border-synth-pink px-3 py-1.5 rounded transition text-xs font-bold uppercase tracking-wider shadow-glow-pink"><i class="fas fa-edit"></i> Log</button>
                       <button onclick="window.resolveTicket('${ticket.id}')" class="bg-synth-purple/50 hover:bg-synth-cyan hover:text-synth-darkest text-white border border-synth-cyan px-3 py-1.5 rounded transition text-xs font-bold uppercase tracking-wider ml-1 shadow-glow-cyan" title="Tandai Ancaman Selesai Diatasi"><i class="fas fa-check"></i></button>
-                  `;
-          } else {
+                  ` + deleteBtn;
+          }
+          else {
             statusHTML = `<span class="flex items-center gap-2 text-synth-cyan text-xs font-bold"><i class="fas fa-check-circle glow-cyan"></i> Selesai</span>`;
-            actionHTML = `<button onclick="window.openDetailModal('${ticket.id}')" class="text-synth-medium hover:text-synth-cyan transition p-2 bg-synth-darkest rounded border border-synth-medium hover:border-synth-cyan"><i class="fas fa-eye"></i> Detail</button>`;
+            actionHTML = `<button onclick="window.openDetailModal('${ticket.id}')" class="text-synth-medium hover:text-synth-cyan transition p-2 bg-synth-darkest rounded border border-synth-medium hover:border-synth-cyan"><i class="fas fa-eye"></i> Detail</button>` + deleteBtn;
           }
 
           const idColorClass =
